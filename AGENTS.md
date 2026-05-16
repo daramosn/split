@@ -1,4 +1,4 @@
-# Tricount Svelte - Agent Guidance
+# SplitUp Svelte - Agent Guidance
 
 ## Quick Commands
 
