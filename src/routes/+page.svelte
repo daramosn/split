@@ -6,10 +6,11 @@
 	const supabase = createClient();
 
 	async function signInWithGoogle() {
+		document.cookie = `auth_redirect=/; path=/; max-age=300; SameSite=Lax`;
 		await supabase.auth.signInWithOAuth({
 			provider: 'google',
 			options: {
-				redirectTo: `${window.location.origin}/auth/callback?next=/`
+				redirectTo: `${window.location.origin}/auth/callback`
 			}
 		});
 	}
