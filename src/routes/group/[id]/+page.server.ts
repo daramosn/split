@@ -1,11 +1,30 @@
-import { getGroup, addExpense, updateExpense, deleteExpense, addSettlement, markSettlementPaid, calculateBalances, calculateOptimizedTransactions, addParticipant, removeParticipant, updateParticipant } from '$lib/server/store';
+import {
+	getGroupByInviteCode,
+	addExpense,
+	updateExpense,
+	deleteExpense,
+	addSettlement,
+	markSettlementPaid,
+	calculateBalances,
+	calculateOptimizedTransactions,
+	addParticipant,
+	removeParticipant,
+	isGroupOwner
+} from '$lib/server/store';
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
-import { addExpenseSchema, addParticipantSchema, settlementSchema, parseFormData } from '$lib/server/schemas';
+import { addExpenseSchema, addParticipantSchema, parseFormData } from '$lib/server/schemas';
 
-export const load: PageServerLoad = async ({ params }) => {
-	const group = getGroup(params.id);
-	if (!group) throw error(404, 'Group not found');
+export const load: PageServerLoad = async ({ params, locals: { getUser, supabase } }) => {
+	const user = await getUser();
+	const group = await getGroupByInviteCode(supabase, params.id);
+
+	if (!group) {
+		throw error(404, 'Group not found');
+	}
+
+	const userId = user?.id ?? null;
+	const isOwner = userId ? await isGroupOwner(supabase, group.id, userId) : false;
 
 	const { balances, total } = calculateBalances(group);
 	const transactions = calculateOptimizedTransactions(group);
@@ -26,14 +45,27 @@ export const load: PageServerLoad = async ({ params }) => {
 		balances: balancesList,
 		total,
 		transactions,
-		currency: group.currency
+		currency: group.currency,
+		isOwner,
+		userId,
+		user: user ?? null
 	};
 };
 
 export const actions: Actions = {
-	addExpense: async ({ request, params }) => {
-		const group = getGroup(params.id);
+	addExpense: async ({ request, params, locals: { supabase, getUser } }) => {
+		const user = await getUser();
+		if (!user) {
+			return { error: 'You must be signed in to add expenses' };
+		}
+
+		const group = await getGroupByInviteCode(supabase, params.id);
 		if (!group) throw error(404, 'Group not found');
+
+		const isOwner = await isGroupOwner(supabase, group.id, user.id);
+		if (!isOwner) {
+			return { error: 'Only the group owner can add expenses' };
+		}
 
 		const formData = await request.formData();
 		const parsed = parseFormData(addExpenseSchema, formData);
@@ -56,15 +88,27 @@ export const actions: Actions = {
 			try { splitAmounts = JSON.parse(parsed.splitAmounts); } catch { splitAmounts = undefined; }
 		}
 
-		const expense = addExpense(params.id, parsed.title.trim(), parsed.amount, parsed.paidBy, splitBetween, parsed.splitMode, splitParts, splitAmounts, parsed.date);
-		if (!expense) return { error: 'Failed to add expense' };
-
-		return { success: true };
+		try {
+			await addExpense(supabase, group.id, parsed.title.trim(), parsed.amount, parsed.paidBy, splitBetween, parsed.splitMode, splitParts, splitAmounts, parsed.date);
+			return { success: true };
+		} catch (err) {
+			return { error: 'Failed to add expense' };
+		}
 	},
 
-	updateExpense: async ({ request, params }) => {
-		const group = getGroup(params.id);
+	updateExpense: async ({ request, params, locals: { supabase, getUser } }) => {
+		const user = await getUser();
+		if (!user) {
+			return { error: 'You must be signed in to update expenses' };
+		}
+
+		const group = await getGroupByInviteCode(supabase, params.id);
 		if (!group) throw error(404, 'Group not found');
+
+		const isOwner = await isGroupOwner(supabase, group.id, user.id);
+		if (!isOwner) {
+			return { error: 'Only the group owner can update expenses' };
+		}
 
 		const formData = await request.formData();
 		const expenseId = formData.get('expenseId')?.toString() ?? '';
@@ -86,39 +130,57 @@ export const actions: Actions = {
 		const splitPartsStr = formData.get('splitParts')?.toString() ?? '';
 		let splitParts: Record<string, number> | undefined;
 		if (splitPartsStr) {
-			try {
-				splitParts = JSON.parse(splitPartsStr);
-			} catch {
-				splitParts = undefined;
-			}
+			try { splitParts = JSON.parse(splitPartsStr); } catch { splitParts = undefined; }
 		}
 
 		const splitAmountsStr = formData.get('splitAmounts')?.toString() ?? '';
 		let splitAmounts: Record<string, number> | undefined;
 		if (splitAmountsStr) {
-			try {
-				splitAmounts = JSON.parse(splitAmountsStr);
-			} catch {
-				splitAmounts = undefined;
-			}
+			try { splitAmounts = JSON.parse(splitAmountsStr); } catch { splitAmounts = undefined; }
 		}
 
-		const success = updateExpense(params.id, expenseId, title.trim(), amount, paidBy, splitBetween, splitMode, splitParts, splitAmounts, date);
+		const success = await updateExpense(supabase, group.id, expenseId, title.trim(), amount, paidBy, splitBetween, splitMode, splitParts, splitAmounts, date);
 		if (!success) return { error: 'Failed to update expense' };
 
 		return { success: true };
 	},
 
-	deleteExpense: async ({ request, params }) => {
+	deleteExpense: async ({ request, params, locals: { supabase, getUser } }) => {
+		const user = await getUser();
+		if (!user) {
+			return { error: 'You must be signed in to delete expenses' };
+		}
+
+		const group = await getGroupByInviteCode(supabase, params.id);
+		if (!group) throw error(404, 'Group not found');
+
+		const isOwner = await isGroupOwner(supabase, group.id, user.id);
+		if (!isOwner) {
+			return { error: 'Only the group owner can delete expenses' };
+		}
+
 		const formData = await request.formData();
 		const expenseId = formData.get('expenseId')?.toString();
 		if (!expenseId) return { error: 'Missing expense ID' };
 
-		deleteExpense(params.id, expenseId);
+		await deleteExpense(supabase, group.id, expenseId);
 		return { success: true };
 	},
 
-	addParticipant: async ({ request, params }) => {
+	addParticipant: async ({ request, params, locals: { supabase, getUser } }) => {
+		const user = await getUser();
+		if (!user) {
+			return { error: 'You must be signed in to add members' };
+		}
+
+		const group = await getGroupByInviteCode(supabase, params.id);
+		if (!group) throw error(404, 'Group not found');
+
+		const isOwner = await isGroupOwner(supabase, group.id, user.id);
+		if (!isOwner) {
+			return { error: 'Only the group owner can add members' };
+		}
+
 		const formData = await request.formData();
 		const parsed = parseFormData(addParticipantSchema, formData);
 
@@ -126,20 +188,50 @@ export const actions: Actions = {
 			return { error: parsed.error };
 		}
 
-		addParticipant(params.id, parsed.name.trim());
-		return { success: true };
+		try {
+			await addParticipant(supabase, group.id, parsed.name.trim(), null);
+			return { success: true };
+		} catch (err) {
+			return { error: 'Failed to add participant' };
+		}
 	},
 
-	removeParticipant: async ({ request, params }) => {
+	removeParticipant: async ({ request, params, locals: { supabase, getUser } }) => {
+		const user = await getUser();
+		if (!user) {
+			return { error: 'You must be signed in to remove members' };
+		}
+
+		const group = await getGroupByInviteCode(supabase, params.id);
+		if (!group) throw error(404, 'Group not found');
+
+		const isOwner = await isGroupOwner(supabase, group.id, user.id);
+		if (!isOwner) {
+			return { error: 'Only the group owner can remove members' };
+		}
+
 		const formData = await request.formData();
 		const participantId = formData.get('participantId')?.toString();
 		if (!participantId) return { error: 'Missing participant ID' };
 
-		removeParticipant(params.id, participantId);
+		await removeParticipant(supabase, group.id, participantId);
 		return { success: true };
 	},
 
-	settleUp: async ({ request, params }) => {
+	settleUp: async ({ request, params, locals: { supabase, getUser } }) => {
+		const user = await getUser();
+		if (!user) {
+			return { error: 'You must be signed in to settle up' };
+		}
+
+		const group = await getGroupByInviteCode(supabase, params.id);
+		if (!group) throw error(404, 'Group not found');
+
+		const isOwner = await isGroupOwner(supabase, group.id, user.id);
+		if (!isOwner) {
+			return { error: 'Only the group owner can settle up' };
+		}
+
 		const formData = await request.formData();
 		const fromId = formData.get('fromId')?.toString() ?? '';
 		const toId = formData.get('toId')?.toString() ?? '';
@@ -147,16 +239,29 @@ export const actions: Actions = {
 
 		if (!fromId || !toId || amount <= 0) return { error: 'Invalid settlement data' };
 
-		addSettlement(params.id, fromId, toId, amount);
+		await addSettlement(supabase, group.id, fromId, toId, amount);
 		return { success: true };
 	},
 
-	markPaid: async ({ request, params }) => {
+	markPaid: async ({ request, params, locals: { supabase, getUser } }) => {
+		const user = await getUser();
+		if (!user) {
+			return { error: 'You must be signed in to mark as paid' };
+		}
+
+		const group = await getGroupByInviteCode(supabase, params.id);
+		if (!group) throw error(404, 'Group not found');
+
+		const isOwner = await isGroupOwner(supabase, group.id, user.id);
+		if (!isOwner) {
+			return { error: 'Only the group owner can mark as paid' };
+		}
+
 		const formData = await request.formData();
 		const settlementId = formData.get('settlementId')?.toString();
 		if (!settlementId) return { error: 'Missing settlement ID' };
 
-		markSettlementPaid(params.id, settlementId);
+		await markSettlementPaid(supabase, group.id, settlementId);
 		return { success: true };
 	}
 };

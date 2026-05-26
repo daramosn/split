@@ -1,10 +1,22 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import { createClient } from '$lib/supabase/client';
+	import { IconPlus, IconSearch, IconUsers, IconCurrency, IconArrowRight, IconGroup, IconLink } from '$lib/components/icons';
 
 	let { data } = $props();
+	const supabase = createClient();
+
+	async function signInWithGoogle() {
+		await supabase.auth.signInWithOAuth({
+			provider: 'google',
+			options: {
+				redirectTo: `${window.location.origin}/auth/callback`
+			}
+		});
+	}
 </script>
 
 <div class="container">
+    {#if !data.session?.user}
 	<section class="hero animate-fade-in-up">
 		<div class="hero-content">
 			<h1 class="hero-title">
@@ -46,23 +58,31 @@
 			</div>
 		</div>
 	</section>
+	{/if}
 
-	<div class="actions-bar animate-fade-in-up stagger-2">
-		<a href="/create" class="btn btn-primary btn-lg">
-			<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-				<line x1="12" y1="5" x2="12" y2="19"/>
-				<line x1="5" y1="12" x2="19" y2="12"/>
-			</svg>
-			Create Group
-		</a>
-	</div>
+	{#if data.session?.user}
+		<div class="actions-bar animate-fade-in-up stagger-2">
+			<a href="/create" class="btn btn-primary btn-lg">
+				<IconPlus size={20} strokeWidth={2.5} />
+				Create Group
+			</a>
+		</div>
+	{:else}
+		<div class="auth-prompt animate-fade-in-up stagger-2">
+			<p class="text-secondary">Sign in to create and manage your expense groups</p>
+			<button class="btn btn-primary btn-lg" onclick={signInWithGoogle}>
+				<IconSearch size={20} />
+				Sign in with Google
+			</button>
+		</div>
+	{/if}
 
-	{#if data.groups.length > 0}
+	{#if data.groups && data.groups.length > 0}
 		<section class="groups-section animate-fade-in-up stagger-3">
 			<h2 class="section-title">Your Groups</h2>
 			<div class="groups-grid">
 				{#each data.groups as group, i}
-					<a href="/group/{group.id}" class="group-card card card-elevated animate-morph-in" style="animation-delay: {0.05 * (i + 1)}s">
+					<a href="/group/{group.inviteCode}" class="group-card card card-elevated animate-morph-in" style="animation-delay: {0.05 * (i + 1)}s">
 						<div class="gc-header">
 							<div class="gc-avatar">
 								{group.name.charAt(0).toUpperCase()}
@@ -77,26 +97,16 @@
 						<div class="gc-footer">
 							<div class="gc-meta">
 								<span class="chip">
-									<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-										<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-										<circle cx="9" cy="7" r="4"/>
-										<path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-										<path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-									</svg>
+									<IconUsers size={14} />
 									{group.participants.length}
 								</span>
 								<span class="chip">
-									<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-										<line x1="12" y1="1" x2="12" y2="23"/>
-										<path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-									</svg>
+									<IconCurrency size={14} />
 									{group.currency}
 								</span>
 							</div>
 							<div class="gc-arrow">
-								<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-									<polyline points="9 18 15 12 9 6"/>
-								</svg>
+								<IconArrowRight size={20} />
 							</div>
 						</div>
 						<div class="gc-glow"></div>
@@ -110,28 +120,23 @@
 		<div class="card filled-tonal">
 			<div class="join-content">
 				<div class="join-icon">
-					<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-						<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-						<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-					</svg>
+					<IconLink size={28} />
 				</div>
 				<div class="join-text">
 					<h3 class="text-lg font-display">Join a Group</h3>
-					<p class="text-secondary text-sm">Have a group ID? Join an existing group to start tracking.</p>
+					<p class="text-secondary text-sm">Have an invite code? Enter it below to view the group.</p>
 				</div>
 				<form action="/api/join" method="POST" class="join-form">
-					<input type="text" name="groupId" class="input" placeholder="Paste group ID here" required />
+					<input type="text" name="inviteCode" class="input" placeholder="Paste invite code here" required />
 					<button type="submit" class="btn btn-secondary" aria-label="Join group">
-						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-							<polyline points="9 18 15 12 9 6"/>
-						</svg>
+						<IconArrowRight size={18} strokeWidth={2.5} />
 					</button>
 				</form>
 			</div>
 		</div>
 	</section>
 
-	{#if data.groups.length === 0}
+	{#if (!data.groups || data.groups.length === 0) && !data.session?.user}
 		<section class="empty-state animate-fade-in-up stagger-2">
 			<div class="empty-illustration">
 				<div class="empty-circles">
@@ -140,25 +145,15 @@
 					<div class="ec-circle ec-3"></div>
 				</div>
 				<div class="empty-icon">
-					<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-						<rect x="2" y="5" width="20" height="14" rx="2"/>
-						<line x1="2" y1="10" x2="22" y2="10"/>
-						<line x1="6" y1="14" x2="6" y2="14"/>
-						<line x1="10" y1="14" x2="10" y2="14"/>
-						<line x1="14" y1="14" x2="14" y2="14"/>
-						<line x1="18" y1="14" x2="18" y2="14"/>
-					</svg>
+					<IconGroup size={48} strokeWidth={1.5} />
 				</div>
 			</div>
-			<h2 class="text-2xl font-display">No groups yet</h2>
-			<p class="text-secondary mt-2">Create your first group to start splitting expenses<br/>with friends, roommates, or travel buddies.</p>
-			<a href="/create" class="btn btn-primary btn-lg mt-6">
-				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-					<line x1="12" y1="5" x2="12" y2="19"/>
-					<line x1="5" y1="12" x2="19" y2="12"/>
-				</svg>
-				Create your first group
-			</a>
+			<h2 class="text-2xl font-display">Get started with SplitUp</h2>
+			<p class="text-secondary mt-2">Sign in with Google to create your first group<br/>and start splitting expenses with friends.</p>
+			<button class="btn btn-primary btn-lg mt-6" onclick={signInWithGoogle}>
+				<IconSearch size={20} />
+				Sign in with Google
+			</button>
 		</section>
 	{/if}
 </div>
@@ -291,6 +286,18 @@
 		margin-bottom: 48px;
 	}
 
+	.auth-prompt {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 16px;
+		margin-bottom: 48px;
+		padding: 32px;
+		background: var(--color-surface-container);
+		border-radius: var(--radius-xl);
+		text-align: center;
+	}
+
 	.section-title {
 		font-family: var(--font-display);
 		font-size: 22px;
@@ -392,11 +399,6 @@
 	.gc-meta .chip {
 		font-size: 12px;
 		padding: 6px 12px;
-	}
-
-	.gc-meta .chip svg {
-		width: 12px;
-		height: 12px;
 	}
 
 	.gc-arrow {
@@ -552,6 +554,10 @@
 		.join-form .input {
 			min-width: 0;
 			width: 100%;
+		}
+
+		.auth-prompt {
+			padding: 24px;
 		}
 	}
 </style>

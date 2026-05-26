@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { ActionData } from './$types';
+	import { IconArrowLeft, IconUsers, IconList, IconCurrency, IconCheck, IconInfo, IconError } from '$lib/components/icons';
 
 	let { form } = $props();
 </script>
@@ -8,9 +9,7 @@
 	<div class="create-page animate-fade-in-up">
 		<div class="page-header">
 			<a href="/" class="back-link" aria-label="Go back">
-				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-					<polyline points="15 18 9 12 15 6"/>
-				</svg>
+				<IconArrowLeft size={20} strokeWidth={2.5} />
 			</a>
 			<h1 class="text-2xl font-display">Create Group</h1>
 		</div>
@@ -23,12 +22,7 @@
 					<div class="form-group">
 						<label class="label" for="name">
 							<span class="label-icon">
-								<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-									<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-									<circle cx="9" cy="7" r="4"/>
-									<path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-									<path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-								</svg>
+								<IconUsers size={16} />
 							</span>
 							Group Name
 						</label>
@@ -38,12 +32,7 @@
 					<div class="form-group">
 						<label class="label" for="description">
 							<span class="label-icon">
-								<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-									<line x1="17" y1="10" x2="3" y2="10"/>
-									<line x1="21" y1="6" x2="3" y2="6"/>
-									<line x1="21" y1="14" x2="3" y2="14"/>
-									<line x1="17" y1="18" x2="3" y2="18"/>
-								</svg>
+								<IconList size={16} />
 							</span>
 							Description <span class="optional">(optional)</span>
 						</label>
@@ -53,10 +42,7 @@
 					<div class="form-group">
 						<label class="label" for="currency">
 							<span class="label-icon">
-								<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-									<line x1="12" y1="1" x2="12" y2="23"/>
-									<path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-								</svg>
+								<IconCurrency size={16} />
 							</span>
 							Currency
 						</label>
@@ -80,11 +66,7 @@
 				{#if form?.error}
 					<div class="error-card card danger">
 						<div class="error-icon">
-							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-								<circle cx="12" cy="12" r="10"/>
-								<line x1="15" y1="9" x2="9" y2="15"/>
-								<line x1="9" y1="9" x2="15" y2="15"/>
-							</svg>
+							<IconError size={20} />
 						</div>
 						<span>{form.error}</span>
 					</div>
@@ -93,9 +75,7 @@
 				<div class="form-actions">
 					<a href="/" class="btn btn-ghost">Cancel</a>
 					<button type="submit" class="btn btn-primary">
-						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-							<polyline points="20 6 9 17 4 12"/>
-						</svg>
+						<IconCheck size={18} strokeWidth={2.5} />
 						Create Group
 					</button>
 				</div>
@@ -105,11 +85,7 @@
 		<div class="tips-card card filled-tonal animate-fade-in-up stagger-2">
 			<div class="tips-header">
 				<span class="tips-icon">
-					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-						<circle cx="12" cy="12" r="10"/>
-						<line x1="12" y1="16" x2="12" y2="12"/>
-						<line x1="12" y1="8" x2="12.01" y2="8"/>
-					</svg>
+					<IconInfo size={18} />
 				</span>
 				<span class="tips-title">Pro Tips</span>
 			</div>

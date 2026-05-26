@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import { IconUsers, IconCurrency, IconUserAdd, IconPlus, IconUser, IconX, IconArrowRight, IconArrowFlow, IconCheckCircle, IconList, IconEdit, IconTrash, IconReceipt } from '$lib/components/icons';
 
 	let { data } = $props();
 
@@ -229,19 +229,11 @@
 		<div class="group-hero-content">
 			<div class="hero-badge">
 				<span class="chip">
-					<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-						<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-						<circle cx="9" cy="7" r="4"/>
-						<path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-						<path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-					</svg>
+					<IconUsers size={14} />
 					{data.group.participants.length} members
 				</span>
 				<span class="chip">
-					<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-						<line x1="12" y1="1" x2="12" y2="23"/>
-						<path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-					</svg>
+					<IconCurrency size={14} />
 					{data.group.currency}
 				</span>
 			</div>
@@ -251,22 +243,21 @@
 			{/if}
 		</div>
 		<div class="hero-actions">
-			<button class="btn btn-secondary" onclick={() => showAddParticipant = !showAddParticipant}>
-				<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-					<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-					<circle cx="8.5" cy="7" r="4"/>
-					<line x1="20" y1="8" x2="20" y2="14"/>
-					<line x1="23" y1="11" x2="17" y2="11"/>
-				</svg>
-				Add Member
-			</button>
-			<button class="btn btn-primary" onclick={openAddExpense}>
-				<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-					<line x1="12" y1="5" x2="12" y2="19"/>
-					<line x1="5" y1="12" x2="19" y2="12"/>
-				</svg>
-				Add Expense
-			</button>
+			{#if data.isOwner}
+				<button class="btn btn-secondary" onclick={() => showAddParticipant = !showAddParticipant}>
+					<IconUserAdd size={18} strokeWidth={2.5} />
+					Add Member
+				</button>
+				<button class="btn btn-primary" onclick={openAddExpense}>
+					<IconPlus size={18} strokeWidth={2.5} />
+					Add Expense
+				</button>
+			{:else}
+				<div class="guest-badge">
+					<IconUser size={16} />
+					View only (guest access)
+				</div>
+			{/if}
 		</div>
 	</section>
 
@@ -274,12 +265,7 @@
 		<div class="card filled-tonal mb-6 animate-scale-in">
 			<div class="empty-participants">
 				<div class="ep-icon">
-					<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-						<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-						<circle cx="8.5" cy="7" r="4"/>
-						<line x1="20" y1="8" x2="20" y2="14"/>
-						<line x1="23" y1="11" x2="17" y2="11"/>
-					</svg>
+					<IconUserAdd size={32} strokeWidth={1.5} />
 				</div>
 				<p class="text-secondary">Add at least 2 members to start tracking expenses.</p>
 				<button class="btn btn-primary mt-4" onclick={() => showAddParticipant = true}>+ Add Members</button>
@@ -308,10 +294,7 @@
 				<div class="form-header">
 					<h3 class="text-lg font-display">Add Expense</h3>
 					<button type="button" class="close-btn" onclick={() => showAddExpense = false} aria-label="Close dialog">
-						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<line x1="18" y1="6" x2="6" y2="18"/>
-							<line x1="6" y1="6" x2="18" y2="18"/>
-						</svg>
+						<IconX size={20} />
 					</button>
 				</div>
 
@@ -431,10 +414,7 @@
 		<div class="stat-card card card-elevated">
 			<div class="stat-header">
 				<span class="stat-icon text-success">
-					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-						<line x1="12" y1="1" x2="12" y2="23"/>
-						<path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-					</svg>
+					<IconCurrency size={24} />
 				</span>
 				<span class="stat-label">Total Expenses</span>
 			</div>
@@ -476,10 +456,7 @@
 								{getParticipantName(t.from).charAt(0)}
 							</div>
 							<div class="tf-arrow">
-								<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-									<line x1="5" y1="12" x2="19" y2="12"/>
-									<polyline points="12 5 19 12 12 19"/>
-								</svg>
+								<IconArrowFlow size={20} />
 							</div>
 							<div class="tf-avatar to">
 								{getParticipantName(t.to).charAt(0)}
@@ -657,33 +634,29 @@
 									</div>
 								</div>
 								<div class="expense-split text-sm text-secondary">
-									<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-										<line x1="8" y1="6" x2="21" y2="6"/>
-										<line x1="8" y1="12" x2="21" y2="12"/>
-										<line x1="8" y1="18" x2="21" y2="18"/>
-										<line x1="3" y1="6" x2="3.01" y2="6"/>
-										<line x1="3" y1="12" x2="3.01" y2="12"/>
-										<line x1="3" y1="18" x2="3.01" y2="18"/>
-									</svg>
+									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-icon">
+											<line x1="8" y1="6" x2="21" y2="6"/>
+											<line x1="8" y1="12" x2="21" y2="12"/>
+											<line x1="8" y1="18" x2="21" y2="18"/>
+											<line x1="3" y1="6" x2="3.01" y2="6"/>
+											<line x1="3" y1="12" x2="3.01" y2="12"/>
+											<line x1="3" y1="18" x2="3.01" y2="18"/>
+										</svg>
 									{getSplitDisplay(e)}
 								</div>
 							</div>
 							<div class="expense-actions">
-								<button type="button" class="btn btn-ghost btn-sm" onclick={() => startEdit(e)} aria-label="Edit expense">
-									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-										<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-										<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-									</svg>
-								</button>
-								<form method="POST" action="?/deleteExpense">
-									<input type="hidden" name="expenseId" value={e.id} />
-									<button type="submit" class="btn btn-ghost btn-sm text-danger" aria-label="Delete expense">
-										<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-											<polyline points="3 6 5 6 21 6"/>
-											<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-										</svg>
+								{#if data.isOwner}
+									<button type="button" class="btn btn-ghost btn-sm" onclick={() => startEdit(e)} aria-label="Edit expense">
+										<IconEdit size={16} />
 									</button>
-								</form>
+									<form method="POST" action="?/deleteExpense">
+										<input type="hidden" name="expenseId" value={e.id} />
+										<button type="submit" class="btn btn-ghost btn-sm text-danger" aria-label="Delete expense">
+											<IconTrash size={16} />
+										</button>
+									</form>
+								{/if}
 							</div>
 						{/if}
 					</div>
@@ -701,15 +674,14 @@
 						{p.name.charAt(0).toUpperCase()}
 					</div>
 					<span class="member-name">{p.name}</span>
-					<form method="POST" action="?/removeParticipant" class="member-action">
-						<input type="hidden" name="participantId" value={p.id} />
-						<button type="submit" class="btn btn-ghost btn-sm text-danger" aria-label="Remove member">
-							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-								<line x1="18" y1="6" x2="6" y2="18"/>
-									<line x1="6" y1="6" x2="18" y2="18"/>
-							</svg>
-						</button>
-					</form>
+					{#if data.isOwner}
+						<form method="POST" action="?/removeParticipant" class="member-action">
+							<input type="hidden" name="participantId" value={p.id} />
+							<button type="submit" class="btn btn-ghost btn-sm text-danger" aria-label="Remove member">
+								<IconX size={16} />
+							</button>
+						</form>
+					{/if}
 				</div>
 			{/each}
 		</div>
@@ -752,15 +724,23 @@
 		padding: 6px 12px;
 	}
 
-	.hero-badge .chip svg {
-		width: 12px;
-		height: 12px;
-	}
-
 	.hero-actions {
 		display: flex;
 		gap: 12px;
 		flex-shrink: 0;
+		align-items: center;
+	}
+
+	.guest-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		padding: 10px 16px;
+		background: var(--color-surface-container);
+		border-radius: var(--radius-full);
+		font-size: 13px;
+		font-weight: 500;
+		color: var(--color-on-surface-variant);
 	}
 
 	.sheet-backdrop {

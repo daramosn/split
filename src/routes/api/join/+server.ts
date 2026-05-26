@@ -1,15 +1,14 @@
-import { getGroup } from '$lib/server/store';
+import { getGroupByInviteCode } from '$lib/server/store';
 import { redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ request }) => {
 	const formData = await request.formData();
-	const groupId = formData.get('groupId')?.toString() ?? '';
+	const inviteCode = formData.get('inviteCode')?.toString() ?? '';
 
-	const group = getGroup(groupId.trim());
-	if (!group) {
-		throw redirect(303, '/?error=Group+not+found');
+	if (!inviteCode) {
+		throw redirect(303, '/?error=Invite+code+required');
 	}
 
-	throw redirect(303, `/group/${groupId}`);
+	throw redirect(303, `/group/${inviteCode.trim()}`);
 };
