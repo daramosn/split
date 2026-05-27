@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { IconUsers, IconCurrency, IconUserAdd, IconPlus, IconUser, IconX, IconArrowRight, IconArrowFlow, IconCheckCircle, IconList, IconEdit, IconTrash, IconReceipt } from '$lib/components/icons';
+	import { IconUsers, IconCurrency, IconUserAdd, IconPlus, IconUser, IconX, IconArrowRight, IconArrowFlow, IconArrowRightShort, IconCheckCircle, IconCheckSmall, IconList, IconListLines, IconEdit, IconTrash, IconReceipt, IconReceiptLarge } from '$lib/components/icons';
 
 	let { data } = $props();
 
@@ -488,19 +488,14 @@
 					<div class="settled-card card" class:paid={s.paid}>
 						<div class="settled-flow">
 							<span class="settled-name">{getParticipantName(s.fromId)}</span>
-							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-								<line x1="5" y1="12" x2="19" y2="12"/>
-								<polyline points="12 5 19 12 12 19"/>
-							</svg>
+							<IconArrowRightShort size={16} />
 							<span class="settled-name">{getParticipantName(s.toId)}</span>
 						</div>
 						<span class="settled-amount font-display">{formatCurrency(s.amount)}</span>
 						<div class="settled-actions">
 							{#if s.paid}
 								<span class="badge badge-success">
-									<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-										<polyline points="20 6 9 17 4 12"/>
-									</svg>
+									<IconCheckSmall size={12} strokeWidth={3} />
 									Paid
 								</span>
 							{:else}
@@ -521,10 +516,7 @@
 		{#if data.group.expenses.length === 0}
 			<div class="card filled-tonal text-center py-12">
 				<div class="empty-icon mb-4">
-					<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-						<rect x="2" y="5" width="20" height="14" rx="2"/>
-						<line x1="2" y1="10" x2="22" y2="10"/>
-					</svg>
+					<IconReceiptLarge size={40} strokeWidth={1.5} />
 				</div>
 				<p class="text-secondary">No expenses recorded yet.</p>
 				<button class="btn btn-primary mt-4" onclick={openAddExpense}>+ Add First Expense</button>
@@ -634,14 +626,7 @@
 									</div>
 								</div>
 								<div class="expense-split text-sm text-secondary">
-									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-icon">
-											<line x1="8" y1="6" x2="21" y2="6"/>
-											<line x1="8" y1="12" x2="21" y2="12"/>
-											<line x1="8" y1="18" x2="21" y2="18"/>
-											<line x1="3" y1="6" x2="3.01" y2="6"/>
-											<line x1="3" y1="12" x2="3.01" y2="12"/>
-											<line x1="3" y1="18" x2="3.01" y2="18"/>
-										</svg>
+									<IconListLines size={16} class="inline-icon" />
 									{getSplitDisplay(e)}
 								</div>
 							</div>
