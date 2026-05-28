@@ -57,6 +57,7 @@
 							<option value="CNY">🇨🇳 CNY (¥)</option>
 							<option value="INR">🇮🇳 INR (₹)</option>
 							<option value="MXN">🇲🇽 MXN ($)</option>
+							<option value="COP">🇨🇴 COP ($)</option>
 						</select>
 					</div>
 				</div>
