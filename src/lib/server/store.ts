@@ -390,6 +390,30 @@ export function calculateOptimizedTransactions(group: Group): { from: string; to
 	return transactions;
 }
 
+export async function updateGroup(
+	supabase: SupabaseClient,
+	groupId: string,
+	name: string,
+	description: string,
+	currency: string
+): Promise<boolean> {
+	const { error } = await supabase
+		.from('groups')
+		.update({ name, description, currency })
+		.eq('id', groupId);
+
+	return !error;
+}
+
+export async function deleteGroup(supabase: SupabaseClient, groupId: string): Promise<boolean> {
+	const { error } = await supabase
+		.from('groups')
+		.delete()
+		.eq('id', groupId);
+
+	return !error;
+}
+
 export async function isGroupOwner(supabase: SupabaseClient, groupId: string, userId: string): Promise<boolean> {
 	const { data: group } = await supabase
 		.from('groups')

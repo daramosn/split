@@ -4,6 +4,7 @@ export { default as IconUsers } from './IconUsers.svelte';
 export { default as IconUser } from './IconUser.svelte';
 export { default as IconUserAdd } from './IconUserAdd.svelte';
 export { default as IconCurrency } from './IconCurrency.svelte';
+export { default as IconDotsVertical } from './IconDotsVertical.svelte';
 export { default as IconArrowRight } from './IconArrowRight.svelte';
 export { default as IconArrowLeft } from './IconArrowLeft.svelte';
 export { default as IconArrowFlow } from './IconArrowFlow.svelte';

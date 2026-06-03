@@ -19,6 +19,11 @@
 
   let showAddExpense = $state(false)
   let showAddParticipant = $state(false)
+  let showEditGroup = $state(false)
+  let showDeleteGroup = $state(false)
+  let editGroupName = $state('')
+  let editGroupDescription = $state('')
+  let editGroupCurrency = $state('USD')
   let splitType = $state('all')
   let selectedSplitters = $state<string[]>([])
   let splitMode = $state<'equal' | 'parts' | 'amount'>('equal')
@@ -35,6 +40,13 @@
     splitParts = {}
     splitAmounts = {}
     showAddExpense = true
+  }
+
+  function openEditGroup() {
+    editGroupName = data.group.name
+    editGroupDescription = data.group.description
+    editGroupCurrency = data.group.currency
+    showEditGroup = true
   }
 
   let editingExpenseId = $state<string | null>(null)
@@ -322,6 +334,26 @@
         </div>
       {/if}
     </div>
+    {#if data.isOwner}
+      <div class="hero-bottom-actions">
+        <button
+          class="btn btn-ghost btn-sm"
+          onclick={openEditGroup}
+          aria-label="Edit group"
+        >
+          <IconEdit size={16} />
+          Edit
+        </button>
+        <button
+          class="btn btn-ghost btn-sm hero-delete-btn"
+          onclick={() => (showDeleteGroup = true)}
+          aria-label="Delete group"
+        >
+          <IconTrash size={16} />
+          Delete
+        </button>
+      </div>
+    {/if}
   </section>
 
   {#if data.group.participants.length === 0}
@@ -371,6 +403,96 @@
           <button type="submit" class="btn btn-primary">Add Member</button>
         </div>
       </form>
+    </div>
+  {/if}
+
+  {#if showEditGroup}
+    <div
+      class="sheet-backdrop"
+      onclick={() => (showEditGroup = false)}
+      onkeydown={(e) => e.key === 'Escape' && (showEditGroup = false)}
+      role="presentation"
+    ></div>
+    <div class="sheet-content card-elevated animate-slide-in-up">
+      <form method="POST" action="?/updateGroup" class="add-participant-form">
+        <h3 class="text-lg font-display mb-4">Edit Group</h3>
+        <div class="form-group">
+          <label class="label" for="edit-name">Group Name</label>
+          <input
+            type="text"
+            id="edit-name"
+            name="name"
+            class="input"
+            bind:value={editGroupName}
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label class="label" for="edit-description">Description</label>
+          <input
+            type="text"
+            id="edit-description"
+            name="description"
+            class="input"
+            bind:value={editGroupDescription}
+          />
+        </div>
+        <div class="form-group">
+          <label class="label" for="edit-currency">Currency</label>
+          <select
+            id="edit-currency"
+            name="currency"
+            class="input"
+            bind:value={editGroupCurrency}
+          >
+            <option value="USD">USD ($)</option>
+            <option value="EUR">EUR (€)</option>
+            <option value="GBP">GBP (£)</option>
+            <option value="JPY">JPY (¥)</option>
+            <option value="CAD">CAD ($)</option>
+            <option value="AUD">AUD ($)</option>
+            <option value="CHF">CHF (Fr)</option>
+            <option value="CNY">CNY (¥)</option>
+            <option value="INR">INR (₹)</option>
+            <option value="MXN">MXN ($)</option>
+            <option value="COP">COP ($)</option>
+          </select>
+        </div>
+        <div class="sheet-actions">
+          <button
+            type="button"
+            class="btn btn-ghost"
+            onclick={() => (showEditGroup = false)}>Cancel</button
+          >
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  {/if}
+
+  {#if showDeleteGroup}
+    <div
+      class="sheet-backdrop"
+      onclick={() => (showDeleteGroup = false)}
+      onkeydown={(e) => e.key === 'Escape' && (showDeleteGroup = false)}
+      role="presentation"
+    ></div>
+    <div class="sheet-content card-elevated animate-slide-in-up sheet-narrow">
+      <h3 class="text-lg font-display mb-2">Delete Group</h3>
+      <p class="text-secondary mb-6">
+        This will permanently delete <strong>{data.group.name}</strong> and all its
+        expenses, settlements, and members. This action cannot be undone.
+      </p>
+      <div class="sheet-actions">
+        <button
+          type="button"
+          class="btn btn-ghost"
+          onclick={() => (showDeleteGroup = false)}>Cancel</button
+        >
+        <form method="POST" action="?/deleteGroup">
+          <button type="submit" class="btn btn-danger">Delete Group</button>
+        </form>
+      </div>
     </div>
   {/if}
 
@@ -1111,6 +1233,29 @@
     gap: 12px;
     flex-shrink: 0;
     align-items: center;
+  }
+
+  .hero-bottom-actions {
+    position: absolute;
+    bottom: 16px;
+    right: 20px;
+    display: flex;
+    gap: 4px;
+    opacity: 0.6;
+    transition: opacity var(--transition-fast);
+  }
+
+  .group-hero:hover .hero-bottom-actions {
+    opacity: 1;
+  }
+
+  .hero-delete-btn {
+    color: var(--color-danger);
+  }
+
+  .hero-delete-btn:hover {
+    background: var(--color-danger-container);
+    color: var(--color-on-danger-container);
   }
 
   .guest-badge {

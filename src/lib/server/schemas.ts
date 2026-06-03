@@ -6,6 +6,12 @@ export const createGroupSchema = z.object({
 	currency: z.string().optional().default('USD')
 });
 
+export const updateGroupSchema = z.object({
+	name: z.string().min(1, 'Group name is required'),
+	description: z.string().optional(),
+	currency: z.string().optional().default('USD')
+});
+
 export const addExpenseSchema = z.object({
 	title: z.string().min(1, 'Title is required'),
 	amount: z.coerce.number().positive('Amount must be positive'),

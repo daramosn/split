@@ -16,7 +16,7 @@
 	{/if}
 
 	{#if data.groups && data.groups.length > 0}
-		<GroupsSection groups={data.groups} />
+		<GroupsSection groups={data.groups} userId={data.user?.id} />
 	{/if}
 
 	<JoinSection />

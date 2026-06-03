@@ -9,11 +9,13 @@ import {
 	calculateOptimizedTransactions,
 	addParticipant,
 	removeParticipant,
-	isGroupOwner
+	isGroupOwner,
+	updateGroup,
+	deleteGroup
 } from '$lib/server/store';
-import { error } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
-import { addExpenseSchema, addParticipantSchema, parseFormData } from '$lib/server/schemas';
+import { addExpenseSchema, addParticipantSchema, updateGroupSchema, parseFormData } from '$lib/server/schemas';
 
 export const load: PageServerLoad = async ({ params, locals: { getUser, supabase } }) => {
 	const user = await getUser();
@@ -53,6 +55,51 @@ export const load: PageServerLoad = async ({ params, locals: { getUser, supabase
 };
 
 export const actions: Actions = {
+	updateGroup: async ({ request, params, locals: { supabase, getUser } }) => {
+		const user = await getUser();
+		if (!user) {
+			return { error: 'You must be signed in to update a group' };
+		}
+
+		const group = await getGroupByInviteCode(supabase, params.id);
+		if (!group) throw error(404, 'Group not found');
+
+		if (group.ownerId !== user.id) {
+			return { error: 'Only the group owner can update the group' };
+		}
+
+		const formData = await request.formData();
+		const parsed = parseFormData(updateGroupSchema, formData);
+
+		if ('error' in parsed) {
+			return { error: parsed.error };
+		}
+
+		const success = await updateGroup(supabase, group.id, parsed.name.trim(), parsed.description?.trim() ?? '', parsed.currency ?? 'USD');
+		if (!success) return { error: 'Failed to update group' };
+
+		return { success: true };
+	},
+
+	deleteGroup: async ({ params, locals: { supabase, getUser } }) => {
+		const user = await getUser();
+		if (!user) {
+			return { error: 'You must be signed in to delete a group' };
+		}
+
+		const group = await getGroupByInviteCode(supabase, params.id);
+		if (!group) throw error(404, 'Group not found');
+
+		if (group.ownerId !== user.id) {
+			return { error: 'Only the group owner can delete the group' };
+		}
+
+		const success = await deleteGroup(supabase, group.id);
+		if (!success) return { error: 'Failed to delete group' };
+
+		throw redirect(303, '/');
+	},
+
 	addExpense: async ({ request, params, locals: { supabase, getUser } }) => {
 		const user = await getUser();
 		if (!user) {
