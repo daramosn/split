@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { ActionData } from './$types';
 	import { IconArrowLeft, IconUsers, IconList, IconCurrency, IconCheck, IconInfo, IconError } from '$lib/components/icons';
+	import { CURRENCIES } from '$lib/constants';
 
 	let { form } = $props();
 </script>
@@ -47,17 +48,9 @@
 							Currency
 						</label>
 						<select id="currency" name="currency" class="input">
-							<option value="USD">🇺🇸 USD ($)</option>
-							<option value="EUR">🇪🇺 EUR (€)</option>
-							<option value="GBP">🇬🇧 GBP (£)</option>
-							<option value="JPY">🇯🇵 JPY (¥)</option>
-							<option value="CAD">🇨🇦 CAD ($)</option>
-							<option value="AUD">🇦🇺 AUD ($)</option>
-							<option value="CHF">🇨🇭 CHF (Fr)</option>
-							<option value="CNY">🇨🇳 CNY (¥)</option>
-							<option value="INR">🇮🇳 INR (₹)</option>
-							<option value="MXN">🇲🇽 MXN ($)</option>
-							<option value="COP">🇨🇴 COP ($)</option>
+							{#each CURRENCIES as c}
+								<option value={c.value}>{c.label}</option>
+							{/each}
 						</select>
 					</div>
 				</div>
