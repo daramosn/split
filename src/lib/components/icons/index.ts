@@ -23,3 +23,4 @@ export { default as IconError } from './IconError.svelte';
 export { default as IconReceipt } from './IconReceipt.svelte';
 export { default as IconReceiptLarge } from './IconReceiptLarge.svelte';
 export { default as IconGroup } from './IconGroup.svelte';
+export { default as IconGoogle } from './IconGoogle.svelte';

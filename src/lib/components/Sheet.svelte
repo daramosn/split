@@ -7,6 +7,7 @@
     title?: string
     size?: 'narrow' | 'default' | 'wide'
     onclose?: () => void
+    onready?: (close: () => void) => void
     children: Snippet
   }
 
@@ -15,49 +16,55 @@
     title,
     size = 'default',
     onclose,
+    onready,
     children,
   }: Props = $props()
 
-  let dialog: HTMLDialogElement
+  let popoverEle: HTMLDivElement
+
+  function close() {
+    if (popoverEle?.matches(':popover-open')) {
+      popoverEle.hidePopover()
+    }
+    open = false
+    onclose?.()
+  }
 
   $effect(() => {
-    if (!dialog) return
-    if (open && !dialog.open) {
-      dialog.showModal()
-    } else if (!open && dialog.open) {
-      dialog.close()
-    }
+    onready?.(close)
   })
 
+  // Popover → parent (backdrop click, Escape key)
   $effect(() => {
-    if (!dialog) return
-    const onDialogClose = () => {
-      open = false
-      onclose?.()
+    if (!popoverEle) return
+    const onToggle = (e: ToggleEvent) => {
+      if (e.newState === 'closed') {
+        open = false
+        onclose?.()
+      }
     }
-    const onDialogCancel = (e: Event) => {
-      e.preventDefault()
-      open = false
-      onclose?.()
-    }
-    dialog.addEventListener('close', onDialogClose)
-    dialog.addEventListener('cancel', onDialogCancel)
-    return () => {
-      dialog.removeEventListener('close', onDialogClose)
-      dialog.removeEventListener('cancel', onDialogCancel)
+    popoverEle.addEventListener('toggle', onToggle)
+    return () => popoverEle.removeEventListener('toggle', onToggle)
+  })
+
+  // Parent → popover (open direction only)
+  $effect(() => {
+    if (!popoverEle) return
+    if (open && !popoverEle.matches(':popover-open')) {
+      popoverEle.showPopover()
     }
   })
 </script>
 
-<dialog bind:this={dialog} class="sheet-dialog sheet-{size}">
+<div bind:this={popoverEle} popover="auto" class="sheet-popover sheet-{size}">
   {#if title}
     <div class="sheet-header">
       <h3 class="text-lg font-display">{title}</h3>
       <button
         type="button"
         class="close-btn"
-        onclick={() => dialog.close()}
-        aria-label="Close dialog"
+        onclick={close}
+        aria-label="Close"
       >
         <IconX size={20} />
       </button>
@@ -66,30 +73,59 @@
   <div class="sheet-body">
     {@render children()}
   </div>
-</dialog>
+</div>
 
 <style>
-  .sheet-dialog {
+  .sheet-popover {
+    transition:
+      transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+      display 0.4s allow-discrete,
+      overlay 0.4s allow-discrete;
+    transform: translateX(-50%) translateY(100%);
     position: fixed;
     top: auto;
-    right: auto;
     bottom: 0;
     left: 50%;
-    transform: translateX(-50%);
-    margin: 0;
     width: 100%;
     max-width: 480px;
+    margin: 0;
+    padding: 24px;
     border: none;
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-    padding: 24px;
     background: var(--color-surface-bright);
-    z-index: 101;
-    animation: slideInUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
   }
 
-  .sheet-dialog::backdrop {
+  .sheet-popover:popover-open {
+    display: flex;
+    flex-direction: column;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  @starting-style {
+    .sheet-popover:popover-open {
+      transform: translateX(-50%) translateY(100%);
+    }
+  }
+
+  .sheet-popover::backdrop {
     background: var(--color-scrim);
-    animation: fadeIn 0.3s ease forwards;
+    opacity: 0;
+    transition:
+      opacity 0.3s ease,
+      display 0.3s allow-discrete,
+      overlay 0.3s allow-discrete;
+  }
+
+  .sheet-popover:popover-open::backdrop {
+    opacity: 1;
+  }
+
+  @starting-style {
+    .sheet-popover:popover-open::backdrop {
+      opacity: 0;
+    }
   }
 
   .sheet-narrow {
@@ -105,6 +141,11 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 24px;
+  }
+
+  .sheet-body {
+    flex: 1;
+    overflow-y: auto;
   }
 
   .close-btn {
@@ -126,31 +167,10 @@
     color: var(--color-on-surface);
   }
 
-  @keyframes slideInUp {
-    from {
-      transform: translateX(-50%) translateY(100%);
-    }
-    to {
-      transform: translateX(-50%) translateY(0);
-    }
-  }
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
   @media (prefers-reduced-motion: reduce) {
-    .sheet-dialog {
-      animation: none;
-    }
-
-    .sheet-dialog::backdrop {
-      animation: none;
+    .sheet-popover,
+    .sheet-popover::backdrop {
+      transition: none !important;
     }
   }
 </style>

@@ -9,13 +9,22 @@ import {
 	calculateOptimizedTransactions,
 	addParticipant,
 	removeParticipant,
-	isGroupOwner,
 	updateGroup,
 	deleteGroup
 } from '$lib/server/store';
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
-import { addExpenseSchema, addParticipantSchema, updateGroupSchema, parseFormData } from '$lib/server/schemas';
+import {
+	addExpenseSchema,
+	updateExpenseSchema,
+	deleteExpenseSchema,
+	addParticipantSchema,
+	removeParticipantSchema,
+	updateGroupSchema,
+	settlementSchema,
+	markPaidSchema,
+	parseFormData
+} from '$lib/server/schemas';
 
 export const load: PageServerLoad = async ({ params, locals: { getUser, supabase } }) => {
 	const user = await getUser();
@@ -26,31 +35,43 @@ export const load: PageServerLoad = async ({ params, locals: { getUser, supabase
 	}
 
 	const userId = user?.id ?? null;
-	const isOwner = userId ? await isGroupOwner(supabase, group.id, userId) : false;
-
-	const { balances, total } = calculateBalances(group);
-	const transactions = calculateOptimizedTransactions(group);
-
-	const balancesList = group.participants.map(p => ({
-		participantId: p.id,
-		participantName: p.name,
-		totalPaid: group.expenses.filter(e => e.paidBy === p.id).reduce((sum, e) => sum + e.amount, 0),
-		totalOwed: group.expenses.reduce((sum, e) => {
-			const perPerson = e.amount / e.splitBetween.length;
-			return sum + (e.splitBetween.includes(p.id) ? perPerson : 0);
-		}, 0),
-		balance: balances.get(p.id) ?? 0
-	}));
+	const isOwner = userId !== null && group.ownerId === userId;
 
 	return {
 		group,
-		balances: balancesList,
-		total,
-		transactions,
 		currency: group.currency,
 		isOwner,
 		userId,
-		user: user ?? null
+		user: user ?? null,
+		summary: new Promise<{
+			balances: { participantId: string; participantName: string; totalPaid: number; totalOwed: number; balance: number }[];
+			total: number;
+			transactions: { from: string; to: string; amount: number }[];
+		}>((resolve) => {
+			const { balances, total } = calculateBalances(group);
+			const transactions = calculateOptimizedTransactions(group);
+
+			const balancesList = group.participants.map(p => ({
+				participantId: p.id,
+				participantName: p.name,
+				totalPaid: group.expenses.filter(e => e.paidBy === p.id).reduce((sum, e) => sum + e.amount, 0),
+				totalOwed: group.expenses.reduce((sum, e) => {
+					if (e.splitMode === 'parts' && e.splitParts) {
+						const totalParts = Object.values(e.splitParts).reduce((s, n) => s + n, 0);
+						const parts = e.splitParts[p.id] ?? 0;
+						return sum + (totalParts > 0 ? (parts / totalParts) * e.amount : 0);
+					}
+					if (e.splitMode === 'amount' && e.splitAmounts) {
+						return sum + (e.splitAmounts[p.id] ?? 0);
+					}
+					const perPerson = e.amount / Math.max(e.splitBetween.length, 1);
+					return sum + (e.splitBetween.includes(p.id) ? perPerson : 0);
+				}, 0),
+				balance: balances.get(p.id) ?? 0
+			}));
+
+			resolve({ balances: balancesList, total, transactions });
+		})
 	};
 };
 
@@ -71,11 +92,17 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const parsed = parseFormData(updateGroupSchema, formData);
 
-		if ('error' in parsed) {
+		if (!parsed.success) {
 			return { error: parsed.error };
 		}
 
-		const success = await updateGroup(supabase, group.id, parsed.name.trim(), parsed.description?.trim() ?? '', parsed.currency ?? 'USD');
+		const success = await updateGroup(
+			supabase,
+			group.id,
+			parsed.data.name.trim(),
+			parsed.data.description?.trim() ?? '',
+			parsed.data.currency ?? 'USD'
+		);
 		if (!success) return { error: 'Failed to update group' };
 
 		return { success: true };
@@ -109,36 +136,56 @@ export const actions: Actions = {
 		const group = await getGroupByInviteCode(supabase, params.id);
 		if (!group) throw error(404, 'Group not found');
 
-		const isOwner = await isGroupOwner(supabase, group.id, user.id);
-		if (!isOwner) {
+		if (group.ownerId !== user.id) {
 			return { error: 'Only the group owner can add expenses' };
 		}
 
 		const formData = await request.formData();
 		const parsed = parseFormData(addExpenseSchema, formData);
 
-		if ('error' in parsed) {
+		if (!parsed.success) {
 			return { error: parsed.error };
 		}
 
-		const splitBetween = parsed.splitType === 'specific'
-			? (parsed.splitBetween?.split(',') ?? [])
-			: group.participants.map(p => p.id);
+		const data = parsed.data;
+		const splitBetween =
+			data.splitType === 'specific'
+				? (data.splitBetween?.split(',') ?? [])
+				: group.participants.map(p => p.id);
 
 		let splitParts: Record<string, number> | undefined;
-		if (parsed.splitParts) {
-			try { splitParts = JSON.parse(parsed.splitParts); } catch { splitParts = undefined; }
+		if (data.splitParts) {
+			try {
+				splitParts = JSON.parse(data.splitParts);
+			} catch {
+				splitParts = undefined;
+			}
 		}
 
 		let splitAmounts: Record<string, number> | undefined;
-		if (parsed.splitAmounts) {
-			try { splitAmounts = JSON.parse(parsed.splitAmounts); } catch { splitAmounts = undefined; }
+		if (data.splitAmounts) {
+			try {
+				splitAmounts = JSON.parse(data.splitAmounts);
+			} catch {
+				splitAmounts = undefined;
+			}
 		}
 
 		try {
-			await addExpense(supabase, group.id, parsed.title.trim(), parsed.amount, parsed.paidBy, splitBetween, parsed.splitMode, splitParts, splitAmounts, parsed.date);
+			await addExpense(
+				supabase,
+				group.id,
+				data.title.trim(),
+				data.amount,
+				data.paidBy,
+				splitBetween,
+				data.splitMode,
+				splitParts,
+				splitAmounts,
+				data.date
+			);
 			return { success: true };
-		} catch (err) {
+		} catch {
 			return { error: 'Failed to add expense' };
 		}
 	},
@@ -152,41 +199,54 @@ export const actions: Actions = {
 		const group = await getGroupByInviteCode(supabase, params.id);
 		if (!group) throw error(404, 'Group not found');
 
-		const isOwner = await isGroupOwner(supabase, group.id, user.id);
-		if (!isOwner) {
+		if (group.ownerId !== user.id) {
 			return { error: 'Only the group owner can update expenses' };
 		}
 
 		const formData = await request.formData();
-		const expenseId = formData.get('expenseId')?.toString() ?? '';
-		const title = formData.get('title')?.toString() ?? '';
-		const amount = parseFloat(formData.get('amount')?.toString() ?? '0');
-		const paidBy = formData.get('paidBy')?.toString() ?? '';
-		const splitType = formData.get('splitType')?.toString() ?? 'all';
-		const splitMode = (formData.get('splitMode')?.toString() ?? 'equal') as 'equal' | 'parts' | 'amount';
-		const date = formData.get('date')?.toString() ?? '';
+		const parsed = parseFormData(updateExpenseSchema, formData);
 
-		if (!expenseId || !title.trim() || amount <= 0 || !paidBy) {
-			return { error: 'Invalid expense data' };
+		if (!parsed.success) {
+			return { error: parsed.error };
 		}
 
-		const splitBetween = splitType === 'specific'
-			? (formData.get('splitBetween')?.toString()?.split(',') ?? [])
-			: group.participants.map(p => p.id);
+		const data = parsed.data;
+		const splitBetween =
+			data.splitType === 'specific'
+				? (data.splitBetween?.split(',') ?? [])
+				: group.participants.map(p => p.id);
 
-		const splitPartsStr = formData.get('splitParts')?.toString() ?? '';
 		let splitParts: Record<string, number> | undefined;
-		if (splitPartsStr) {
-			try { splitParts = JSON.parse(splitPartsStr); } catch { splitParts = undefined; }
+		if (data.splitParts) {
+			try {
+				splitParts = JSON.parse(data.splitParts);
+			} catch {
+				splitParts = undefined;
+			}
 		}
 
-		const splitAmountsStr = formData.get('splitAmounts')?.toString() ?? '';
 		let splitAmounts: Record<string, number> | undefined;
-		if (splitAmountsStr) {
-			try { splitAmounts = JSON.parse(splitAmountsStr); } catch { splitAmounts = undefined; }
+		if (data.splitAmounts) {
+			try {
+				splitAmounts = JSON.parse(data.splitAmounts);
+			} catch {
+				splitAmounts = undefined;
+			}
 		}
 
-		const success = await updateExpense(supabase, group.id, expenseId, title.trim(), amount, paidBy, splitBetween, splitMode, splitParts, splitAmounts, date);
+		const success = await updateExpense(
+			supabase,
+			group.id,
+			data.expenseId,
+			data.title.trim(),
+			data.amount,
+			data.paidBy,
+			splitBetween,
+			data.splitMode,
+			splitParts,
+			splitAmounts,
+			data.date
+		);
 		if (!success) return { error: 'Failed to update expense' };
 
 		return { success: true };
@@ -201,16 +261,20 @@ export const actions: Actions = {
 		const group = await getGroupByInviteCode(supabase, params.id);
 		if (!group) throw error(404, 'Group not found');
 
-		const isOwner = await isGroupOwner(supabase, group.id, user.id);
-		if (!isOwner) {
+		if (group.ownerId !== user.id) {
 			return { error: 'Only the group owner can delete expenses' };
 		}
 
 		const formData = await request.formData();
-		const expenseId = formData.get('expenseId')?.toString();
-		if (!expenseId) return { error: 'Missing expense ID' };
+		const parsed = parseFormData(deleteExpenseSchema, formData);
 
-		await deleteExpense(supabase, group.id, expenseId);
+		if (!parsed.success) {
+			return { error: parsed.error };
+		}
+
+		const success = await deleteExpense(supabase, group.id, parsed.data.expenseId);
+		if (!success) return { error: 'Failed to delete expense' };
+
 		return { success: true };
 	},
 
@@ -223,22 +287,21 @@ export const actions: Actions = {
 		const group = await getGroupByInviteCode(supabase, params.id);
 		if (!group) throw error(404, 'Group not found');
 
-		const isOwner = await isGroupOwner(supabase, group.id, user.id);
-		if (!isOwner) {
+		if (group.ownerId !== user.id) {
 			return { error: 'Only the group owner can add members' };
 		}
 
 		const formData = await request.formData();
 		const parsed = parseFormData(addParticipantSchema, formData);
 
-		if ('error' in parsed) {
+		if (!parsed.success) {
 			return { error: parsed.error };
 		}
 
 		try {
-			await addParticipant(supabase, group.id, parsed.name.trim(), null);
+			await addParticipant(supabase, group.id, parsed.data.name.trim(), null);
 			return { success: true };
-		} catch (err) {
+		} catch {
 			return { error: 'Failed to add participant' };
 		}
 	},
@@ -252,16 +315,20 @@ export const actions: Actions = {
 		const group = await getGroupByInviteCode(supabase, params.id);
 		if (!group) throw error(404, 'Group not found');
 
-		const isOwner = await isGroupOwner(supabase, group.id, user.id);
-		if (!isOwner) {
+		if (group.ownerId !== user.id) {
 			return { error: 'Only the group owner can remove members' };
 		}
 
 		const formData = await request.formData();
-		const participantId = formData.get('participantId')?.toString();
-		if (!participantId) return { error: 'Missing participant ID' };
+		const parsed = parseFormData(removeParticipantSchema, formData);
 
-		await removeParticipant(supabase, group.id, participantId);
+		if (!parsed.success) {
+			return { error: parsed.error };
+		}
+
+		const success = await removeParticipant(supabase, group.id, parsed.data.participantId);
+		if (!success) return { error: 'Failed to remove participant' };
+
 		return { success: true };
 	},
 
@@ -274,20 +341,29 @@ export const actions: Actions = {
 		const group = await getGroupByInviteCode(supabase, params.id);
 		if (!group) throw error(404, 'Group not found');
 
-		const isOwner = await isGroupOwner(supabase, group.id, user.id);
-		if (!isOwner) {
+		if (group.ownerId !== user.id) {
 			return { error: 'Only the group owner can settle up' };
 		}
 
 		const formData = await request.formData();
-		const fromId = formData.get('fromId')?.toString() ?? '';
-		const toId = formData.get('toId')?.toString() ?? '';
-		const amount = parseFloat(formData.get('amount')?.toString() ?? '0');
+		const parsed = parseFormData(settlementSchema, formData);
 
-		if (!fromId || !toId || amount <= 0) return { error: 'Invalid settlement data' };
+		if (!parsed.success) {
+			return { error: parsed.error };
+		}
 
-		await addSettlement(supabase, group.id, fromId, toId, amount);
-		return { success: true };
+		try {
+			await addSettlement(
+				supabase,
+				group.id,
+				parsed.data.fromId,
+				parsed.data.toId,
+				parsed.data.amount
+			);
+			return { success: true };
+		} catch {
+			return { error: 'Failed to create settlement' };
+		}
 	},
 
 	markPaid: async ({ request, params, locals: { supabase, getUser } }) => {
@@ -299,16 +375,20 @@ export const actions: Actions = {
 		const group = await getGroupByInviteCode(supabase, params.id);
 		if (!group) throw error(404, 'Group not found');
 
-		const isOwner = await isGroupOwner(supabase, group.id, user.id);
-		if (!isOwner) {
+		if (group.ownerId !== user.id) {
 			return { error: 'Only the group owner can mark as paid' };
 		}
 
 		const formData = await request.formData();
-		const settlementId = formData.get('settlementId')?.toString();
-		if (!settlementId) return { error: 'Missing settlement ID' };
+		const parsed = parseFormData(markPaidSchema, formData);
 
-		await markSettlementPaid(supabase, group.id, settlementId);
+		if (!parsed.success) {
+			return { error: parsed.error };
+		}
+
+		const success = await markSettlementPaid(supabase, group.id, parsed.data.settlementId);
+		if (!success) return { error: 'Failed to mark as paid' };
+
 		return { success: true };
 	}
 };

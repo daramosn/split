@@ -23,22 +23,51 @@
     children,
     onclose,
   }: Props = $props()
+
+  let closeSheet = $state(() => {})
+  let submitting = $state(false)
+
+  function handleCancel() {
+    closeSheet()
+    onclose()
+  }
+
+  function handleSuccess() {
+    closeSheet()
+    onclose()
+  }
 </script>
 
-<Sheet bind:open={open} {title} {size}>
+<Sheet bind:open={open} onready={(fn) => closeSheet = fn} {title} {size}>
   <form
     method="POST"
     {action}
     class="add-participant-form"
-    use:enhance={() => async ({ update }) => {
-      await update()
-      onclose()
+    use:enhance={() => {
+      submitting = true
+      return async ({ result, update }: { result: { type: string }; update: (opts?: { reset?: boolean }) => Promise<void> }) => {
+        try {
+          await update({ reset: false })
+          if (result.type === 'success' || result.type === 'redirect') {
+            handleSuccess()
+          }
+        } finally {
+          submitting = false
+        }
+      }
     }}
   >
     {@render children()}
     <div class="sheet-actions">
-      <Button variant="ghost" onclick={onclose}>Cancel</Button>
-      <Button variant="primary" type="submit">{submitLabel}</Button>
+      <Button variant="ghost" onclick={handleCancel} disabled={submitting}>Cancel</Button>
+      <Button variant="primary" type="submit" disabled={submitting} aria-busy={submitting}>
+        {#if submitting}
+          <span class="spinner" aria-hidden="true"></span>
+          Saving...
+        {:else}
+          {submitLabel}
+        {/if}
+      </Button>
     </div>
   </form>
 </Sheet>

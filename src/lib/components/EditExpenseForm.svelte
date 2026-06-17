@@ -71,8 +71,8 @@
   role="region"
   aria-label="Edit expense: {expense.title}"
   use:enhance={() => async ({ update }) => {
-    await update()
     onsave()
+    await update()
   }}
 >
   <input type="hidden" name="expenseId" value={expense.id} />

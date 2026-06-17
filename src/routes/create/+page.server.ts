@@ -1,4 +1,3 @@
-import { createGroup } from '$lib/server/store';
 import { redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { createGroupSchema, parseFormData } from '$lib/server/schemas';
@@ -21,23 +20,37 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const parsed = parseFormData(createGroupSchema, formData);
 
-		if ('error' in parsed) {
-			return { error: parsed.error };
+		if (!parsed.success) {
+			return {
+				error: parsed.error,
+				values: {
+					name: (formData.get('name')?.toString() ?? ''),
+					description: (formData.get('description')?.toString() ?? ''),
+					currency: (formData.get('currency')?.toString() ?? 'USD')
+				}
+			};
 		}
 
 		const { data: group, error } = await supabase
 			.from('groups')
 			.insert({
-				name: parsed.name.trim(),
-				description: parsed.description?.trim() ?? '',
-				currency: parsed.currency ?? 'USD',
+				name: parsed.data.name.trim(),
+				description: parsed.data.description?.trim() ?? '',
+				currency: parsed.data.currency ?? 'USD',
 				owner_id: user.id
 			})
 			.select()
 			.single();
 
 		if (error || !group) {
-			return { error: 'Failed to create group. Please try again.' };
+			return {
+				error: 'Failed to create group. Please try again.',
+				values: {
+					name: parsed.data.name,
+					description: parsed.data.description ?? '',
+					currency: parsed.data.currency ?? 'USD'
+				}
+			};
 		}
 
 		throw redirect(303, `/group/${group.invite_code}`);

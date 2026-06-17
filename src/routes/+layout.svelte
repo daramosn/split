@@ -1,11 +1,16 @@
 <script lang="ts">
   import favicon from '$lib/assets/favicon.svg'
   import { createClient } from '$lib/supabase/client'
+  import Toast from '$lib/components/Toast.svelte'
   import '../app.css'
 
   let { children, data } = $props()
 
-  let theme = $state<'light' | 'dark'>('dark')
+  let theme = $state<'light' | 'dark'>(
+    typeof document !== 'undefined'
+      ? (document.documentElement.getAttribute('data-theme') as 'light' | 'dark') || 'dark'
+      : 'dark'
+  )
   let showUserMenu = $state(false)
   const supabase = createClient()
 
@@ -19,9 +24,25 @@
     const saved = localStorage.getItem('theme') as 'light' | 'dark' | null
     if (saved) {
       theme = saved
-      document.documentElement.setAttribute('data-theme', saved)
+    } else {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      theme = prefersDark ? 'dark' : 'light'
     }
+    document.documentElement.setAttribute('data-theme', theme)
   })
+
+  function handleClickOutside(event: MouseEvent) {
+    const target = event.target as HTMLElement
+    if (showUserMenu && !target.closest('.user-menu-container')) {
+      showUserMenu = false
+    }
+  }
+
+  function handleEscapeKey(event: KeyboardEvent) {
+    if (event.key === 'Escape' && showUserMenu) {
+      showUserMenu = false
+    }
+  }
 
   async function signInWithGoogle() {
     await supabase.auth.signInWithOAuth({
@@ -53,6 +74,8 @@
     return name.charAt(0).toUpperCase()
   }
 </script>
+
+<svelte:window onclick={handleClickOutside} onkeydown={handleEscapeKey} />
 
 <svelte:head>
   <link rel="icon" href={favicon} />
@@ -213,6 +236,8 @@
   <main id="main-content" class="main">
     {@render children()}
   </main>
+
+  <Toast />
 </div>
 
 <style>

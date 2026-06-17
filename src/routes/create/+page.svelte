@@ -1,9 +1,44 @@
 <script lang="ts">
-	import type { ActionData } from './$types';
+	import { enhance } from '$app/forms';
+	import { untrack } from 'svelte';
 	import { IconArrowLeft, IconUsers, IconList, IconCurrency, IconCheck, IconInfo, IconError } from '$lib/components/icons';
 	import { CURRENCIES } from '$lib/constants';
+	import { addToast } from '$lib/stores/toast.svelte';
 
 	let { form } = $props();
+
+	let name = $state(untrack(() => form?.values?.name ?? ''));
+	let description = $state(untrack(() => form?.values?.description ?? ''));
+	let currency = $state(untrack(() => form?.values?.currency ?? 'USD'));
+	let submitting = $state(false);
+	let lastError = $state(untrack(() => form?.error ?? ''));
+	let formElement: HTMLFormElement | undefined = $state();
+
+	$effect(() => {
+		if (form?.error) {
+			lastError = form.error;
+		}
+	});
+
+	function handleEnhance() {
+		return async ({ result, update }: { result: { type: string; data?: { error?: string } }; update: (opts?: { reset?: boolean }) => Promise<void> }) => {
+			submitting = true;
+			lastError = '';
+
+			try {
+				if (result.type === 'failure' || result.type === 'error') {
+					const errorMsg = result.data?.error ?? 'Something went wrong. Please try again.';
+					lastError = errorMsg;
+					addToast(errorMsg, 'error');
+					await update({ reset: false });
+				} else {
+					await update();
+				}
+			} finally {
+				submitting = false;
+			}
+		};
+	}
 </script>
 
 <div class="container">
@@ -16,7 +51,12 @@
 		</div>
 
 		<div class="create-card card card-elevated">
-			<form method="POST" class="create-form">
+			<form
+				method="POST"
+				class="create-form"
+				bind:this={formElement}
+				use:enhance={handleEnhance}
+			>
 				<div class="form-section">
 					<h3 class="form-section-title">Group Details</h3>
 
@@ -27,7 +67,16 @@
 							</span>
 							Group Name
 						</label>
-						<input type="text" id="name" name="name" class="input" placeholder="Weekend Trip" required />
+						<input
+							type="text"
+							id="name"
+							name="name"
+							class="input"
+							placeholder="Weekend Trip"
+							required
+							bind:value={name}
+							disabled={submitting}
+						/>
 					</div>
 
 					<div class="form-group">
@@ -37,7 +86,15 @@
 							</span>
 							Description <span class="optional">(optional)</span>
 						</label>
-						<input type="text" id="description" name="description" class="input" placeholder="July 2024 vacation" />
+						<input
+							type="text"
+							id="description"
+							name="description"
+							class="input"
+							placeholder="July 2024 vacation"
+							bind:value={description}
+							disabled={submitting}
+						/>
 					</div>
 
 					<div class="form-group">
@@ -47,7 +104,13 @@
 							</span>
 							Currency
 						</label>
-						<select id="currency" name="currency" class="input">
+						<select
+							id="currency"
+							name="currency"
+							class="input"
+							bind:value={currency}
+							disabled={submitting}
+						>
 							{#each CURRENCIES as c}
 								<option value={c.value}>{c.label}</option>
 							{/each}
@@ -57,20 +120,30 @@
 
 				<div class="divider"></div>
 
-				{#if form?.error}
-					<div class="error-card card danger">
+				{#if lastError}
+					<div class="error-card card danger" role="alert">
 						<div class="error-icon">
 							<IconError size={20} />
 						</div>
-						<span>{form.error}</span>
+						<span>{lastError}</span>
 					</div>
 				{/if}
 
 				<div class="form-actions">
-					<a href="/" class="btn btn-ghost">Cancel</a>
-					<button type="submit" class="btn btn-primary">
-						<IconCheck size={18} strokeWidth={2.5} />
-						Create Group
+					<a href="/" class="btn btn-ghost" class:disabled={submitting}>Cancel</a>
+					<button
+						type="submit"
+						class="btn btn-primary"
+						disabled={submitting}
+						aria-busy={submitting}
+					>
+						{#if submitting}
+							<span class="spinner" aria-hidden="true"></span>
+							Creating...
+						{:else}
+							<IconCheck size={18} strokeWidth={2.5} />
+							Create Group
+						{/if}
 					</button>
 				</div>
 			</form>

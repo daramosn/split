@@ -1,22 +1,63 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Group, Participant, Expense, Settlement, Balance } from '$lib/types';
+import type { Group, Participant, Expense, Settlement } from '$lib/types';
 
 export async function getGroupsByOwner(supabase: SupabaseClient, ownerId: string): Promise<Group[]> {
 	const { data: groups, error } = await supabase
 		.from('groups')
-		.select('*')
+		.select(`
+			*,
+			participants(*),
+			expenses(*),
+			settlements(*)
+		`)
 		.eq('owner_id', ownerId)
 		.order('created_at', { ascending: false });
 
 	if (error) throw error;
 	if (!groups) return [];
 
-	const result: Group[] = [];
-	for (const g of groups) {
-		const group = await getFullGroup(supabase, g.id);
-		if (group) result.push(group);
-	}
-	return result;
+	return groups.map(mapGroupRow);
+}
+
+function mapGroupRow(g: any): Group {
+	return {
+		id: g.id,
+		ownerId: g.owner_id,
+		name: g.name,
+		description: g.description || '',
+		currency: g.currency,
+		inviteCode: g.invite_code,
+		createdAt: g.created_at,
+		participants: (g.participants || []).map((p: any) => ({
+			id: p.id,
+			groupId: p.group_id,
+			userId: p.user_id,
+			name: p.name,
+			createdAt: p.created_at
+		})),
+		expenses: (g.expenses || []).map((e: any) => ({
+			id: e.id,
+			groupId: e.group_id,
+			title: e.title,
+			amount: Number(e.amount),
+			paidBy: e.paid_by,
+			splitBetween: e.split_between || [],
+			splitMode: e.split_mode as 'equal' | 'parts' | 'amount',
+			splitParts: e.split_parts || undefined,
+			splitAmounts: e.split_amounts || undefined,
+			date: e.date,
+			createdAt: e.created_at
+		})),
+		settlements: (g.settlements || []).map((s: any) => ({
+			id: s.id,
+			groupId: s.group_id,
+			fromId: s.from_id,
+			toId: s.to_id,
+			amount: Number(s.amount),
+			paid: s.paid,
+			createdAt: s.created_at
+		}))
+	};
 }
 
 export async function getGroupByInviteCode(supabase: SupabaseClient, inviteCode: string): Promise<Group | null> {
@@ -32,106 +73,22 @@ export async function getGroupByInviteCode(supabase: SupabaseClient, inviteCode:
 	return getFullGroup(supabase, group.id);
 }
 
-export async function getGroupById(supabase: SupabaseClient, groupId: string): Promise<Group | null> {
-	return getFullGroup(supabase, groupId);
-}
-
 export async function getFullGroup(supabase: SupabaseClient, groupId: string): Promise<Group | null> {
 	const { data: group, error: groupError } = await supabase
 		.from('groups')
-		.select('*')
+		.select(`
+			*,
+			participants(*),
+			expenses(*),
+			settlements(*)
+		`)
 		.eq('id', groupId)
 		.single();
 
 	if (groupError) return null;
 	if (!group) return null;
 
-	const { data: participants } = await supabase
-		.from('participants')
-		.select('*')
-		.eq('group_id', groupId)
-		.order('created_at');
-
-	const { data: expenses } = await supabase
-		.from('expenses')
-		.select('*')
-		.eq('group_id', groupId)
-		.order('date', { ascending: false });
-
-	const { data: settlements } = await supabase
-		.from('settlements')
-		.select('*')
-		.eq('group_id', groupId)
-		.order('created_at');
-
-	return {
-		id: group.id,
-		ownerId: group.owner_id,
-		name: group.name,
-		description: group.description || '',
-		currency: group.currency,
-		inviteCode: group.invite_code,
-		createdAt: group.created_at,
-		participants: (participants || []).map(p => ({
-			id: p.id,
-			groupId: p.group_id,
-			userId: p.user_id,
-			name: p.name,
-			createdAt: p.created_at
-		})),
-		expenses: (expenses || []).map(e => ({
-			id: e.id,
-			groupId: e.group_id,
-			title: e.title,
-			amount: Number(e.amount),
-			paidBy: e.paid_by,
-			splitBetween: e.split_between || [],
-			splitMode: e.split_mode as 'equal' | 'parts' | 'amount',
-			splitParts: e.split_parts || undefined,
-			splitAmounts: e.split_amounts || undefined,
-			date: e.date,
-			createdAt: e.created_at
-		})),
-		settlements: (settlements || []).map(s => ({
-			id: s.id,
-			groupId: s.group_id,
-			fromId: s.from_id,
-			toId: s.to_id,
-			amount: Number(s.amount),
-			paid: s.paid,
-			createdAt: s.created_at
-		}))
-	};
-}
-
-export async function createGroup(
-	supabase: SupabaseClient,
-	name: string,
-	description: string,
-	currency: string,
-	ownerId: string
-): Promise<Group> {
-	const { data: group, error } = await supabase
-		.from('groups')
-		.insert({ name, description, currency, owner_id: ownerId })
-		.select()
-		.single();
-
-	if (error) throw error;
-	if (!group) throw new Error('Failed to create group');
-
-	return {
-		id: group.id,
-		ownerId: group.owner_id,
-		name: group.name,
-		description: group.description || '',
-		currency: group.currency,
-		inviteCode: group.invite_code,
-		createdAt: group.created_at,
-		participants: [],
-		expenses: [],
-		settlements: []
-	};
+	return mapGroupRow(group);
 }
 
 export async function addParticipant(
@@ -162,16 +119,6 @@ export async function removeParticipant(supabase: SupabaseClient, groupId: strin
 	const { error } = await supabase
 		.from('participants')
 		.delete()
-		.eq('id', participantId)
-		.eq('group_id', groupId);
-
-	return !error;
-}
-
-export async function updateParticipant(supabase: SupabaseClient, groupId: string, participantId: string, name: string): Promise<boolean> {
-	const { error } = await supabase
-		.from('participants')
-		.update({ name })
 		.eq('id', participantId)
 		.eq('group_id', groupId);
 
@@ -302,16 +249,6 @@ export async function markSettlementPaid(supabase: SupabaseClient, groupId: stri
 	return !error;
 }
 
-export async function deleteSettlement(supabase: SupabaseClient, groupId: string, settlementId: string): Promise<boolean> {
-	const { error } = await supabase
-		.from('settlements')
-		.delete()
-		.eq('id', settlementId)
-		.eq('group_id', groupId);
-
-	return !error;
-}
-
 export function calculateBalances(group: Group): { balances: Map<string, number>; total: number } {
 	const balances = new Map<string, number>();
 	group.participants.forEach(p => balances.set(p.id, 0));
@@ -412,15 +349,4 @@ export async function deleteGroup(supabase: SupabaseClient, groupId: string): Pr
 		.eq('id', groupId);
 
 	return !error;
-}
-
-export async function isGroupOwner(supabase: SupabaseClient, groupId: string, userId: string): Promise<boolean> {
-	const { data: group } = await supabase
-		.from('groups')
-		.select('owner_id')
-		.eq('id', groupId)
-		.eq('owner_id', userId)
-		.single();
-
-	return !!group;
 }

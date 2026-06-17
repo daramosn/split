@@ -1,11 +1,3 @@
-export interface Profile {
-	id: string;
-	email: string;
-	fullName: string;
-	avatarUrl: string | null;
-	createdAt: string;
-}
-
 export interface Participant {
 	id: string;
 	groupId: string;
@@ -53,8 +45,6 @@ export interface Group {
 	settlements: Settlement[];
 }
 
-export type GroupSummary = Pick<Group, 'id' | 'name' | 'currency' | 'createdAt' | 'participants' | 'ownerId' | 'inviteCode'>;
-
 export interface Balance {
 	participantId: string;
 	participantName: string;
@@ -69,16 +59,4 @@ export interface Transaction {
 	toId: string;
 	toName: string;
 	amount: number;
-}
-
-export type Result<T, E = string> =
-	| { ok: true; value: T }
-	| { ok: false; error: E };
-
-export function success<T>(value: T): Result<T, never> {
-	return { ok: true, value };
-}
-
-export function failure<E = string>(error: E): Result<never, E> {
-	return { ok: false, error };
 }

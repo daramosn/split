@@ -37,22 +37,44 @@
     { value: 'parts', label: 'By Parts' },
     { value: 'amount', label: 'By Amount' },
   ]
+
+  let closeSheet = $state(() => {})
+  let submitting = $state(false)
+
+  function handleCancel() {
+    closeSheet()
+    onclose()
+  }
+
+  function handleSuccess() {
+    form.reset(participants)
+    closeSheet()
+    onclose()
+  }
 </script>
 
-<Sheet bind:open={open} size="wide">
+<Sheet bind:open={open} onready={(fn) => closeSheet = fn} size="wide">
   <form
     method="POST"
     action="?/addExpense"
     class="expense-form"
-    use:enhance={() => async ({ update }) => {
-      await update()
-      onclose()
-      form.reset(participants)
+    use:enhance={() => {
+      submitting = true
+      return async ({ result, update }: { result: { type: string }; update: (opts?: { reset?: boolean }) => Promise<void> }) => {
+        try {
+          await update({ reset: false })
+          if (result.type === 'success' || result.type === 'redirect') {
+            handleSuccess()
+          }
+        } finally {
+          submitting = false
+        }
+      }
     }}
   >
     <div class="form-header">
       <h3 class="text-lg font-display">Add Expense</h3>
-      <button type="button" class="close-btn" onclick={onclose} aria-label="Close dialog">
+      <button type="button" class="close-btn" onclick={handleCancel} aria-label="Close dialog">
         <IconX size={20} />
       </button>
     </div>
@@ -130,8 +152,15 @@
     {/if}
 
     <div class="sheet-actions">
-      <Button variant="ghost" onclick={onclose}>Cancel</Button>
-      <Button variant="primary" type="submit">Add Expense</Button>
+      <Button variant="ghost" onclick={handleCancel} disabled={submitting}>Cancel</Button>
+      <Button variant="primary" type="submit" disabled={submitting} aria-busy={submitting}>
+        {#if submitting}
+          <span class="spinner" aria-hidden="true"></span>
+          Adding...
+        {:else}
+          Add Expense
+        {/if}
+      </Button>
     </div>
   </form>
 </Sheet>
