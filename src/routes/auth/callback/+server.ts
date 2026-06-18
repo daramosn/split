@@ -1,5 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { setErrorCookie } from '$lib/utils/error-cookie';
 
 export const GET: RequestHandler = async ({ url, locals: { supabase }, cookies }) => {
 	const code = url.searchParams.get('code');
@@ -14,5 +15,6 @@ export const GET: RequestHandler = async ({ url, locals: { supabase }, cookies }
 		}
 	}
 
-	throw redirect(303, '/?error=auth_failed');
+	setErrorCookie(cookies, 'Authentication failed. Please try again.');
+	throw redirect(303, '/');
 };

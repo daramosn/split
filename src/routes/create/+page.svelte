@@ -4,6 +4,7 @@
 	import { IconArrowLeft, IconUsers, IconList, IconCurrency, IconCheck, IconInfo, IconError } from '$lib/components/icons';
 	import { CURRENCIES } from '$lib/constants';
 	import { addToast } from '$lib/stores/toast.svelte';
+	import Button from '$lib/components/base/Button.svelte';
 
 	let { form } = $props();
 
@@ -40,6 +41,11 @@
 		};
 	}
 </script>
+
+<svelte:head>
+	<title>Create Group - SplitUp</title>
+	<meta name="description" content="Create a new expense group. Add members, track expenses, and split costs fairly with friends." />
+</svelte:head>
 
 <div class="container">
 	<div class="create-page animate-fade-in-up">
@@ -131,9 +137,9 @@
 
 				<div class="form-actions">
 					<a href="/" class="btn btn-ghost" class:disabled={submitting}>Cancel</a>
-					<button
+					<Button
 						type="submit"
-						class="btn btn-primary"
+						variant="primary"
 						disabled={submitting}
 						aria-busy={submitting}
 					>
@@ -144,7 +150,7 @@
 							<IconCheck size={18} strokeWidth={2.5} />
 							Create Group
 						{/if}
-					</button>
+					</Button>
 				</div>
 			</form>
 		</div>

@@ -24,3 +24,7 @@ export { default as IconReceipt } from './IconReceipt.svelte';
 export { default as IconReceiptLarge } from './IconReceiptLarge.svelte';
 export { default as IconGroup } from './IconGroup.svelte';
 export { default as IconGoogle } from './IconGoogle.svelte';
+export { default as IconLogo } from './IconLogo.svelte';
+export { default as IconSun } from './IconSun.svelte';
+export { default as IconMoon } from './IconMoon.svelte';
+export { default as IconLogout } from './IconLogout.svelte';

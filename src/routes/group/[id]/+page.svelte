@@ -130,6 +130,11 @@
   }
 </script>
 
+<svelte:head>
+	<title>{data.group.name} - SplitUp</title>
+	<meta name="description" content="Manage expenses for {data.group.name}. Track balances, add expenses, and settle up with your group." />
+</svelte:head>
+
 <div class="container">
   <GroupHero
     group={data.group}

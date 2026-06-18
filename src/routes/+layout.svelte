@@ -2,6 +2,9 @@
   import favicon from '$lib/assets/favicon.svg'
   import { createClient } from '$lib/supabase/client'
   import Toast from '$lib/components/Toast.svelte'
+  import Button from '$lib/components/base/Button.svelte'
+  import { IconLogo, IconSun, IconMoon, IconLogout, IconGoogle } from '$lib/components/icons'
+  import { addToast } from '$lib/stores/toast.svelte'
   import '../app.css'
 
   let { children, data } = $props()
@@ -13,6 +16,13 @@
   )
   let showUserMenu = $state(false)
   const supabase = createClient()
+
+  // Show error toast if present in data
+  $effect(() => {
+    if (data.error) {
+      addToast(data.error, 'error')
+    }
+  })
 
   function toggleTheme() {
     theme = theme === 'light' ? 'dark' : 'light'
@@ -89,24 +99,7 @@
     <div class="container header-content">
       <a href="/" class="logo">
         <span class="logo-icon">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="28"
-            height="28"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <circle cx="9" cy="9" r="6" />
-            <path d="M15 9a6 6 0 1 1-12 0 6 6 0 0 1 12 0z" />
-            <line x1="9" y1="3" x2="9" y2="6" />
-            <line x1="9" y1="12" x2="9" y2="15" />
-            <line x1="3" y1="9" x2="6" y2="9" />
-            <line x1="12" y1="9" x2="15" y2="9" />
-          </svg>
+          <IconLogo />
         </span>
         <span class="logo-text">SplitUp</span>
       </a>
@@ -117,41 +110,9 @@
           aria-label="Toggle theme"
         >
           {#if theme === 'dark'}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <circle cx="12" cy="12" r="5" />
-              <line x1="12" y1="1" x2="12" y2="3" />
-              <line x1="12" y1="21" x2="12" y2="23" />
-              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-              <line x1="1" y1="12" x2="3" y2="12" />
-              <line x1="21" y1="12" x2="23" y2="12" />
-              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-            </svg>
+            <IconSun size={22} />
           {:else}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-            </svg>
+            <IconMoon size={22} />
           {/if}
         </button>
         <div class="header-auth">
@@ -189,44 +150,17 @@
                   </div>
                   <div class="user-menu-divider"></div>
                   <button class="user-menu-item" onclick={signOut}>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                      <polyline points="16 17 21 12 16 7" />
-                      <line x1="21" y1="12" x2="9" y2="12" />
-                    </svg>
+                    <IconLogout size={18} />
                     Sign out
                   </button>
                 </div>
               {/if}
             </div>
           {:else}
-            <button class="btn btn-primary" onclick={signInWithGoogle}>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <circle cx="9" cy="9" r="6" />
-                <path d="M15 9a6 6 0 1 1-12 0 6 6 0 0 1 12 0z" />
-              </svg>
+            <Button variant="primary" onclick={signInWithGoogle}>
+              <IconGoogle size={18} />
               Sign in with Google
-            </button>
+            </Button>
           {/if}
         </div>
       </div>

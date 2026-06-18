@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { enhance } from '$app/forms'
   import type { Group } from '$lib/types'
   import { IconUsers, IconCurrency, IconArrowRight, IconDotsVertical, IconEdit, IconTrash } from '$lib/components/icons'
   import Avatar from '$lib/components/base/Avatar.svelte'
@@ -78,7 +79,7 @@
                 {#if confirmingDeleteId === group.id}
                   <div class="gc-menu-delete-confirm">
                     <span>Delete?</span>
-                    <form method="POST" action="?/deleteGroup">
+                    <form method="POST" action="?/deleteGroup" use:enhance>
                       <input type="hidden" name="groupId" value={group.id} />
                       <Button variant="danger" size="xs" type="submit">Yes</Button>
                     </form>

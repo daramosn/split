@@ -1,6 +1,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms'
   import Avatar from '$lib/components/base/Avatar.svelte'
+  import Badge from '$lib/components/base/Badge.svelte'
   import Button from '$lib/components/base/Button.svelte'
   import { IconArrowFlow, IconArrowRightShort, IconCheckSmall, IconCurrency } from '$lib/components/icons'
   import { getBalanceColor, getBalanceBg, getBalanceLabel } from '$lib/utils/display'
@@ -149,10 +150,10 @@
           <span class="settled-amount font-display">{formatCurrency(s.amount)}</span>
           <div class="settled-actions">
             {#if s.paid}
-              <span class="badge badge-success">
+              <Badge variant="success">
                 <IconCheckSmall size={12} strokeWidth={3} />
                 Paid
-              </span>
+              </Badge>
             {:else}
               <form method="POST" action="?/markPaid" use:enhance>
                 <input type="hidden" name="settlementId" value={s.id} />
