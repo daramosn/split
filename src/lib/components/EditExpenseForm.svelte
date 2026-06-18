@@ -136,3 +136,35 @@
     <Button variant="primary" size="sm" type="submit">Save Changes</Button>
   </div>
 </form>
+
+<style>
+  .edit-expense-form {
+    width: 100%;
+    padding: 20px;
+    background: var(--color-surface-container);
+    border-radius: var(--radius-lg);
+  }
+
+  .edit-expense-form :global(.form-row) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .edit-expense-form :global(.form-group) {
+    margin-bottom: 12px;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+  }
+
+  @media (max-width: 768px) {
+    .edit-expense-form :global(.form-row) {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

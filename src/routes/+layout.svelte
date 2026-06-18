@@ -299,15 +299,4 @@
     background: var(--color-surface-container);
     color: var(--color-on-surface);
   }
-
-  @keyframes scaleIn {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
 </style>

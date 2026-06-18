@@ -42,3 +42,45 @@
     value={JSON.stringify(form.splitParts)}
   />
 </fieldset>
+
+<style>
+  .split-inputs {
+    padding: 16px;
+    background: var(--color-surface-container-low);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-outline-variant);
+  }
+
+  .split-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .split-row:last-child {
+    margin-bottom: 0;
+  }
+
+  .split-name {
+    font-weight: 500;
+    font-size: 14px;
+  }
+
+  .split-parts-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .split-parts-input :global(.input) {
+    width: 60px;
+  }
+
+  .split-calc {
+    font-size: 12px;
+    color: var(--color-on-surface-variant);
+    min-width: 80px;
+  }
+</style>

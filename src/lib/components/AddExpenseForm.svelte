@@ -164,3 +164,44 @@
     </div>
   </form>
 </Sheet>
+
+<style>
+  .expense-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    color: var(--color-on-surface-variant);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .close-btn:hover {
+    background: var(--color-surface-container);
+    color: var(--color-on-surface);
+  }
+
+  .sheet-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+  }
+</style>

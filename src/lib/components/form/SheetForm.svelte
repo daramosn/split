@@ -71,3 +71,18 @@
     </div>
   </form>
 </Sheet>
+
+<style>
+  .add-participant-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .sheet-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+  }
+</style>

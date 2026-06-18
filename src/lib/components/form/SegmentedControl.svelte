@@ -23,3 +23,39 @@
     </label>
   {/each}
 </div>
+
+<style>
+  .segmented-control {
+    display: flex;
+    background: var(--color-surface-container);
+    border-radius: var(--radius-lg);
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .segment {
+    flex: 1;
+    cursor: pointer;
+    padding: 10px 16px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    transition: all var(--transition-fast);
+    color: var(--color-on-surface-variant);
+  }
+
+  .segment input {
+    display: none;
+  }
+
+  .segment:hover {
+    color: var(--color-on-surface);
+  }
+
+  .segment.active {
+    background: var(--color-surface-bright);
+    color: var(--color-primary);
+    box-shadow: var(--elevation-1);
+  }
+</style>

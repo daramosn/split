@@ -36,3 +36,33 @@
     value={JSON.stringify(form.splitAmounts)}
   />
 </fieldset>
+
+<style>
+  .split-inputs {
+    padding: 16px;
+    background: var(--color-surface-container-low);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-outline-variant);
+  }
+
+  .split-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .split-row:last-child {
+    margin-bottom: 0;
+  }
+
+  .split-name {
+    font-weight: 500;
+    font-size: 14px;
+  }
+
+  .split-row :global(.input) {
+    width: 80px;
+  }
+</style>

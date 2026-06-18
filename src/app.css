@@ -299,8 +299,7 @@ fieldset {
 }
 
 /* ============================================
-   COMPONENT CLASSES (pending scoping)
-   These will move to component <style> blocks
+   LAYOUT PRIMITIVES
    ============================================ */
 
 /* --- Card (layout primitive, stays global) --- */

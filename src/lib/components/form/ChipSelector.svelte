@@ -22,3 +22,19 @@
   {/each}
 </div>
 <input type="hidden" name={hiddenName} value={selected.join(',')} />
+
+<style>
+  .splitter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .splitter-chips :global(.chip) {
+    cursor: pointer;
+  }
+
+  .splitter-chips :global(.chip input) {
+    display: none;
+  }
+</style>
